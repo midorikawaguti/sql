@@ -19,12 +19,12 @@ LIMIT 10
 --WHERE
 /* 1. Write a query that returns all customer purchases of product IDs 4 and 9. */
 -- option 1
-SELECT*
+SELECT *
 FROM customer_purchases
 WHERE product_id IN ( 4, 9);
 
 -- option 2
-SELECT*
+SELECT *
 FROM customer_purchases
 WHERE product_id IS 4 OR product_id IS 9;
 
@@ -42,7 +42,7 @@ WHERE vendor_id >=8 AND vendor_id <=10;
 -- option 2
 SELECT * , quantity*cost_to_customer_per_qty price
 FROM customer_purchases
-WHERE vendor_id BETWEEN 8 and 10;
+WHERE vendor_id BETWEEN 8 AND 10;
 
 
 --CASE
@@ -52,6 +52,7 @@ columns and add a column called prod_qty_type_condensed that displays the word �
 if the product_qty_type is “unit,” and otherwise displays the word “bulk.” */
 SELECT *
 FROM product;
+
 
 SELECT product_id, product_name
 ,CASE WHEN product_qty_type = "unit"
@@ -70,7 +71,7 @@ SELECT product_id, product_name
 		THEN "unit"
 		ELSE "bulk"
 		END AS prod_qty_type_condensed
-,CASE WHEN product_name LIKE "%Pepper%" OR product_name LIKE "%pepper%"
+,CASE WHEN LOWER(product_name) LIKE "%pepper%"
 		THEN 1
 		ELSE 0
 		END AS pepper_flag
@@ -79,31 +80,28 @@ FROM product;
 --JOIN
 /* 1. Write a query that INNER JOINs the vendor table to the vendor_booth_assignments table on the 
 vendor_id field they both have in common, and sorts the result by vendor_name, then market_date. */
-SELECT vendor.vendor_id,
-				vendor_name,
-				vendor_type,
-				vendor_owner_first_name,
-				vendor_owner_last_name,
-				booth_number,
-				market_date
-FROM vendor
-INNER JOIN vendor_booth_assignments
-				ON vendor.vendor_id = vendor_booth_assignments.vendor_id
+SELECT a.vendor_id,
+				a.vendor_name,
+				a.vendor_type,
+				a.vendor_owner_first_name,
+				a.vendor_owner_last_name,
+				b.booth_number,
+				b.market_date
+FROM vendor AS a
+INNER JOIN vendor_booth_assignments AS b
+				ON a.vendor_id = b.vendor_id
 				ORDER BY vendor_name, market_date;
 
-				
 
 /* SECTION 3 */
-
 
 -- AGGREGATE
 /* 1. Write a query that determines how many times each vendor has rented a booth 
  at the farmer’s market by counting the vendor booth assignments per vendor_id. */
 
-SELECT 
-vendor_id, booth_number, COUNT (market_date)
+SELECT vendor_id, COUNT (market_date)
 FROM vendor_booth_assignments
-GROUP BY vendor_id, booth_number;
+GROUP BY vendor_id;
 
 /* 2. The Farmer’s Market Customer Appreciation Committee wants to give a bumper 
 sticker to everyone who has ever spent more than $2000 at the market. Write a query that generates a list 
@@ -111,8 +109,8 @@ of customers for them to give stickers to, sorted by last name, then first name.
 
 HINT: This query requires you to join two tables, use an aggregate function, and use the HAVING keyword. */
 SELECT c.customer_last_name, c.customer_first_name,  SUM(quantity*cost_to_customer_per_qty) "Total Spent"
-FROM customer as c
-LEFT JOIN customer_purchases as cp
+FROM customer AS c
+LEFT JOIN customer_purchases AS cp
 ON c.customer_id = cp.customer_id
 GROUP BY c.customer_first_name, c.customer_last_name
 HAVING "Total Spent">2000
@@ -157,7 +155,7 @@ SELECT customer_id
 FROM customer_purchases;
 
 SELECT*
-FROM customer_purchases
+FROM customer_purchases;
 
 /* 2. Using the previous query as a base, determine how much money each customer spent in April 2022. 
 Remember that money spent is quantity*cost_to_customer_per_qty. 
@@ -166,10 +164,17 @@ HINTS: you will need to AGGREGATE, GROUP BY, and filter...
 but remember, STRFTIME returns a STRING for your WHERE statement!! */
 
 SELECT customer_id, SUM(quantity*cost_to_customer_per_qty) "Total Spent"
-		,strftime("%Y", market_date) "Purchase - Year"
-		,strftime("%m", market_date) "Purchase - Month"
-		,strftime("%d", market_date) "Purchase - Day"
-FROM customer_purchases
+FROM(
+	SELECT 
+			customer_id
+			,quantity
+			,cost_to_customer_per_qty
+			,strftime("%Y", market_date) "Purchase - Year"
+			,strftime("%m", market_date) "Purchase - Month"
+			,strftime("%d", market_date) "Purchase - Day"
+	FROM customer_purchases
+) 
 WHERE "Purchase - Year" = "2022" AND
 				  "Purchase - Month" = "04"
-				  GROUP BY customer_id;
+GROUP BY customer_id;
+
